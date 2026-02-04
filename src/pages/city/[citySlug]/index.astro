@@ -1,0 +1,140 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import StationCard from '../../../components/StationCard.astro';
+import Pagination from '../../../components/Pagination.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import {
+  cities,
+  formatBitrateSummary,
+  getCityStat,
+  getCityStations,
+  paginate,
+} from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () =>
+  cities.map((city) => ({
+    params: { citySlug: city.citySlug },
+  }));
+
+const { citySlug } = Astro.params;
+const stat = getCityStat(citySlug!);
+if (!stat) throw new Error(`City not found: ${citySlug}`);
+
+const stations = getCityStations(citySlug!);
+const { items, totalPages, currentPage } = paginate(stations, 1, pageSize);
+
+const topGenres = stat.topGenres.map((genre) => genre.name).join(', ') || 'varied genres';
+const bitrateSummary = formatBitrateSummary(stat.bitrateDistribution);
+
+const seoCopy = `Radio stations in ${stat.cityName} span ${stat.count} verified streams across Greece, giving listeners a reliable way to discover local audio. ` +
+  `Listeners in ${stat.cityName} most often tune into ${topGenres}, offering a balanced mix for every mood and time of day. ` +
+  `Streaming quality ranges from compact mobile-friendly feeds to high fidelity audio, and ${bitrateSummary}. ` +
+  `This city directory is curated for crawlability and accuracy so that search engines can index each station with clear metadata, canonical URLs, and structured data. ` +
+  `Every station card links to a dedicated station profile with votes, stream type, codec, and a direct homepage link for deeper discovery. ` +
+  `Use the list below to discover live stations, open the detail page for full stream info, and explore related genres for broader coverage across Greece. ` +
+  `The listings are sorted for fast scanning and provide internal links to genre pages and related stations to strengthen site navigation. ` +
+  `All stations shown here are currently online and verified for the best listening experience, ensuring that the directory remains current and useful for both listeners and search engines.`;
+
+const title = pageTitle(`Radio stations in ${stat.cityName}`);
+const description = truncate(
+  `Listen to ${stat.count} verified radio stations in ${stat.cityName}. Browse top genres like ${topGenres} and explore detailed stream information.`
+);
+const canonical = buildUrl(`/city/${stat.citySlug}/`);
+const nextUrl = totalPages > 1 ? buildUrl(`/city/${stat.citySlug}/page/2/`) : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Cities', url: '/city/' },
+  { name: stat.cityName, url: `/city/${stat.citySlug}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Radio stations in ${stat.cityName}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `How many radio stations are in ${stat.cityName}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `${stat.cityName} currently has ${stat.count} verified radio stations listed on this site.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Which genres are most popular in ${stat.cityName}?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Top genres in ${stat.cityName} include ${topGenres}.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Are the ${stat.cityName} stations online now?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. This listing only includes stations that are currently online and responding.',
+        },
+      },
+    ],
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Radio stations in {stat.cityName}</h1>
+    <p class="lead">{seoCopy}</p>
+  </header>
+
+  <section class="mb-4">
+    <h2 class="h5">Top genres in {stat.cityName}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {stat.topGenres.map((genre) => (
+        <a class="badge text-bg-light border text-decoration-none" href={`/genre/${genre.slug}/`}>
+          {genre.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl={`/city/${stat.citySlug}/`} currentPage={currentPage} totalPages={totalPages} />
+</Layout>

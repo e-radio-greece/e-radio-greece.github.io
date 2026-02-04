@@ -1,0 +1,50 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { cities } from '../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../lib/seo';
+
+const title = pageTitle('Greek radio stations by city');
+const description = truncate('Browse Greek radio stations by city. Each city page includes verified stations, top genres, and stream details.');
+const canonical = buildUrl('/city/');
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Greek radio stations by city',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: cities.map((city, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: city.cityName,
+      url: buildUrl(`/city/${city.citySlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <header class="mb-4">
+    <h1 class="h2">Greek radio stations by city</h1>
+    <p class="lead">
+      Explore every Greek city with active radio stations. Each city page includes verified streams,
+      top genres, and a detailed listing.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {cities.map((city) => (
+      <a
+        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+        href={`/city/${city.citySlug}/`}
+      >
+        <span>{city.cityName}</span>
+        <span class="badge text-bg-secondary rounded-pill">{city.count}</span>
+      </a>
+    ))}
+  </div>
+</Layout>

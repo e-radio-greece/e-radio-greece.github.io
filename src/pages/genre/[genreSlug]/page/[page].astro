@@ -1,0 +1,115 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import StationCard from '../../../../components/StationCard.astro';
+import Pagination from '../../../../components/Pagination.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import {
+  formatBitrateSummary,
+  genres,
+  getGenreStat,
+  getGenreStations,
+  paginate,
+} from '../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () => {
+  const size = 50;
+  return genres.flatMap((genre) => {
+    const totalPages = Math.max(1, Math.ceil(getGenreStations(genre.genreSlug).length / size));
+    return Array.from({ length: totalPages }, (_, index) => ({
+      params: { genreSlug: genre.genreSlug, page: String(index + 1) },
+    })).slice(1);
+  });
+};
+
+const { genreSlug, page } = Astro.params;
+const stat = getGenreStat(genreSlug!);
+if (!stat) throw new Error(`Genre not found: ${genreSlug}`);
+
+const stations = getGenreStations(genreSlug!);
+const pageNumber = Number(page || '1');
+const { items, totalPages, currentPage } = paginate(stations, pageNumber, pageSize);
+
+const topCities = stat.topCities.map((city) => city.name).join(', ') || 'many cities across Greece';
+const bitrateSummary = formatBitrateSummary(stat.bitrateDistribution);
+
+const seoCopy = `This is page ${currentPage} in the ${stat.genreName} directory. ` +
+  `${stat.count} verified stations are listed for this genre, especially in ${topCities}. ` +
+  `Stream quality varies to cover both efficient and high fidelity listening, and ${bitrateSummary}. ` +
+  `Each station page provides votes, stream data, and related recommendations to help visitors navigate deeper. ` +
+  `Use the listings below to open each station profile and continue exploring the genre across Greece.`;
+
+const title = pageTitle(`${stat.genreName} radio stations in Greece - Page ${currentPage}`);
+const description = truncate(
+  `Page ${currentPage} of ${stat.genreName} radio stations in Greece. Discover verified streams and top cities such as ${topCities}.`
+);
+const canonical = buildUrl(`/genre/${stat.genreSlug}/page/${currentPage}/`);
+const prevUrl = currentPage > 1 ? buildUrl(currentPage === 2 ? `/genre/${stat.genreSlug}/` : `/genre/${stat.genreSlug}/page/${currentPage - 1}/`) : null;
+const nextUrl = currentPage < totalPages ? buildUrl(`/genre/${stat.genreSlug}/page/${currentPage + 1}/`) : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Genres', url: '/genre/' },
+  { name: stat.genreName, url: `/genre/${stat.genreSlug}/` },
+  { name: `Page ${currentPage}`, url: `/genre/${stat.genreSlug}/page/${currentPage}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${stat.genreName} radio stations in Greece - Page ${currentPage}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} prevUrl={prevUrl} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">{stat.genreName} radio stations in Greece</h1>
+    <p class="lead">{seoCopy}</p>
+  </header>
+
+  <section class="mb-4">
+    <h2 class="h5">Top cities for {stat.genreName}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {stat.topCities.map((city) => (
+        <a class="badge text-bg-light border text-decoration-none" href={`/city/${city.slug}/`}>
+          {city.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl={`/genre/${stat.genreSlug}/`} currentPage={currentPage} totalPages={totalPages} />
+</Layout>

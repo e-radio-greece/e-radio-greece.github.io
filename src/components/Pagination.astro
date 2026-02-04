@@ -1,0 +1,51 @@
+---
+const { baseUrl, currentPage, totalPages } = Astro.props as {
+  baseUrl: string;
+  currentPage: number;
+  totalPages: number;
+};
+
+const buildPageUrl = (page: number) => (page === 1 ? baseUrl : `${baseUrl}page/${page}/`);
+
+const pages: number[] = [];
+const start = Math.max(1, currentPage - 2);
+const end = Math.min(totalPages, currentPage + 2);
+for (let i = start; i <= end; i += 1) pages.push(i);
+
+const showStart = start > 1;
+const showEnd = end < totalPages;
+---
+
+{totalPages > 1 && (
+  <nav class="mt-4" aria-label="Pagination">
+    <ul class="pagination flex-wrap">
+      <li class={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+        <a class="page-link" href={buildPageUrl(Math.max(1, currentPage - 1))} aria-label="Previous">
+          &laquo;
+        </a>
+      </li>
+      {showStart && (
+        <>
+          <li class="page-item"><a class="page-link" href={buildPageUrl(1)}>1</a></li>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+        </>
+      )}
+      {pages.map((page) => (
+        <li class={`page-item ${page === currentPage ? 'active' : ''}`}>
+          <a class="page-link" href={buildPageUrl(page)}>{page}</a>
+        </li>
+      ))}
+      {showEnd && (
+        <>
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          <li class="page-item"><a class="page-link" href={buildPageUrl(totalPages)}>{totalPages}</a></li>
+        </>
+      )}
+      <li class={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+        <a class="page-link" href={buildPageUrl(Math.min(totalPages, currentPage + 1))} aria-label="Next">
+          &raquo;
+        </a>
+      </li>
+    </ul>
+  </nav>
+)}

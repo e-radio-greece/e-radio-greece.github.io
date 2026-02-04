@@ -1,0 +1,50 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { genres } from '../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../lib/seo';
+
+const title = pageTitle('Greek radio stations by genre');
+const description = truncate('Browse Greek radio stations by genre. Each genre page includes top cities, bitrate summaries, and verified station listings.');
+const canonical = buildUrl('/genre/');
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Greek radio stations by genre',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: genres.map((genre, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: genre.genreName,
+      url: buildUrl(`/genre/${genre.genreSlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <header class="mb-4">
+    <h1 class="h2">Greek radio stations by genre</h1>
+    <p class="lead">
+      Explore the most popular genres across Greece. Every genre page includes verified stations,
+      top cities, and stream quality summaries.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {genres.map((genre) => (
+      <a
+        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+        href={`/genre/${genre.genreSlug}/`}
+      >
+        <span>{genre.genreName}</span>
+        <span class="badge text-bg-secondary rounded-pill">{genre.count}</span>
+      </a>
+    ))}
+  </div>
+</Layout>

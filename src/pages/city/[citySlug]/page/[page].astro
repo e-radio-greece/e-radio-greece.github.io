@@ -1,0 +1,115 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import StationCard from '../../../../components/StationCard.astro';
+import Pagination from '../../../../components/Pagination.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import {
+  cities,
+  formatBitrateSummary,
+  getCityStat,
+  getCityStations,
+  paginate,
+} from '../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () => {
+  const size = 50;
+  return cities.flatMap((city) => {
+    const totalPages = Math.max(1, Math.ceil(getCityStations(city.citySlug).length / size));
+    return Array.from({ length: totalPages }, (_, index) => ({
+      params: { citySlug: city.citySlug, page: String(index + 1) },
+    })).slice(1);
+  });
+};
+
+const { citySlug, page } = Astro.params;
+const stat = getCityStat(citySlug!);
+if (!stat) throw new Error(`City not found: ${citySlug}`);
+
+const stations = getCityStations(citySlug!);
+const pageNumber = Number(page || '1');
+const { items, totalPages, currentPage } = paginate(stations, pageNumber, pageSize);
+
+const topGenres = stat.topGenres.map((genre) => genre.name).join(', ') || 'varied genres';
+const bitrateSummary = formatBitrateSummary(stat.bitrateDistribution);
+
+const seoCopy = `This is page ${currentPage} of the ${stat.cityName} station directory. ` +
+  `The city features ${stat.count} verified stations, with popular genres such as ${topGenres}. ` +
+  `Stream quality varies across providers, and ${bitrateSummary}. ` +
+  `Each page adds additional stations to improve crawl depth while keeping listings fast and accessible. ` +
+  `Use the station cards below to open full station profiles, explore related genres, and keep listening.`;
+
+const title = pageTitle(`Radio stations in ${stat.cityName} - Page ${currentPage}`);
+const description = truncate(
+  `Page ${currentPage} of ${stat.cityName} radio stations. Discover verified streams, top genres like ${topGenres}, and detailed station profiles.`
+);
+const canonical = buildUrl(`/city/${stat.citySlug}/page/${currentPage}/`);
+const prevUrl = currentPage > 1 ? buildUrl(currentPage === 2 ? `/city/${stat.citySlug}/` : `/city/${stat.citySlug}/page/${currentPage - 1}/`) : null;
+const nextUrl = currentPage < totalPages ? buildUrl(`/city/${stat.citySlug}/page/${currentPage + 1}/`) : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Cities', url: '/city/' },
+  { name: stat.cityName, url: `/city/${stat.citySlug}/` },
+  { name: `Page ${currentPage}`, url: `/city/${stat.citySlug}/page/${currentPage}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Radio stations in ${stat.cityName} - Page ${currentPage}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} prevUrl={prevUrl} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Radio stations in {stat.cityName}</h1>
+    <p class="lead">{seoCopy}</p>
+  </header>
+
+  <section class="mb-4">
+    <h2 class="h5">Top genres in {stat.cityName}</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {stat.topGenres.map((genre) => (
+        <a class="badge text-bg-light border text-decoration-none" href={`/genre/${genre.slug}/`}>
+          {genre.name}
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl={`/city/${stat.citySlug}/`} currentPage={currentPage} totalPages={totalPages} />
+</Layout>

@@ -1,0 +1,44 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import StationCard from '../../components/StationCard.astro';
+import Pagination from '../../components/Pagination.astro';
+import { paginate, topRatedStations } from '../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../lib/seo';
+
+const pageSize = 50;
+const { items, totalPages, currentPage } = paginate(topRatedStations, 1, pageSize);
+
+const title = pageTitle('Top rated Greek radio stations');
+const description = truncate(
+  'Explore the most voted Greek radio stations. This list is sorted by listener votes and updated with the latest available streams.'
+);
+const canonical = buildUrl('/top-rated/');
+const nextUrl = totalPages > 1 ? buildUrl('/top-rated/page/2/') : null;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Top rated Greek radio stations',
+    url: canonical,
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <header class="mb-4">
+    <h1 class="h2">Top rated Greek radio stations</h1>
+    <p class="lead">
+      Discover the most voted stations across Greece. Rankings are based on total listener votes
+      and reflect current popularity.
+    </p>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl="/top-rated/" currentPage={currentPage} totalPages={totalPages} />
+</Layout>

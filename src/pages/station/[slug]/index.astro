@@ -1,0 +1,203 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import StationCard from '../../../components/StationCard.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getRelatedStations, getStationBySlug } from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+import { titleFromSlug } from '../../../lib/slugify';
+
+export const getStaticPaths = async () => {
+  const stations = (await import('../../../data/stations.json')).default as Array<{ slug: string }>;
+  return stations.map((station) => ({
+    params: { slug: station.slug },
+  }));
+};
+
+const { slug } = Astro.params;
+const station = getStationBySlug(slug!);
+if (!station) throw new Error(`Station not found: ${slug}`);
+
+const related = getRelatedStations(station, 8);
+const genres = station.normalizedGenres.map((genre) => ({
+  slug: genre,
+  name: titleFromSlug(genre),
+}));
+const bitrate = station.bitrate ? `${station.bitrate} kbps` : 'Unknown bitrate';
+const codec = station.codec || 'Unknown codec';
+
+const descriptionText = `${station.name} is a Greek radio station serving ${station.cityName} and nearby listeners. ` +
+  `Listeners tune in for ${genres.map((genre) => genre.name).join(', ') || 'varied programming'} with ${bitrate} streaming quality delivered in ${codec} format. ` +
+  `This page provides verified stream details, playback format, and the station homepage so that search engines can index the listing accurately. ` +
+  `Use the related stations section to explore similar stations in ${station.cityName} or stations that share the same genres, creating stronger internal links and discovery paths. ` +
+  `Each station profile includes votes, availability status, and streaming metadata to improve discoverability across Greece and help users compare options quickly. ` +
+  `If the station is temporarily offline, the listing remains available for reference and monitoring. ` +
+  `For the best experience, open the live stream directly or visit the official homepage for schedules, announcements, and on-air personalities.`;
+
+const title = pageTitle(`${station.name} radio station`);
+const description = truncate(descriptionText);
+const canonical = buildUrl(`/station/${station.slug}/`);
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Cities', url: '/city/' },
+  { name: station.cityName, url: `/city/${station.citySlug}/` },
+  { name: station.name, url: `/station/${station.slug}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'RadioStation',
+    name: station.name,
+    url: canonical,
+    areaServed: station.cityName,
+    inLanguage: station.language || 'el',
+    sameAs: station.homepage || undefined,
+    potentialAction: station.stream_url
+      ? {
+          '@type': 'ListenAction',
+          target: station.stream_url,
+        }
+      : undefined,
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <div class="d-flex align-items-center gap-3">
+      {station.favicon ? (
+        <img
+          src={station.favicon}
+          alt={`${station.name} favicon`}
+          width="48"
+          height="48"
+          loading="lazy"
+          class="rounded"
+        />
+      ) : (
+        <div class="bg-secondary-subtle rounded" style="width:48px;height:48px;"></div>
+      )}
+      <div>
+        <h1 class="h2 mb-1">Listen {station.name} online</h1>
+        <p class="mb-0 text-muted">{station.cityName}</p>
+      </div>
+    </div>
+  </header>
+
+  {station.lastcheckok !== 1 && (
+    <div class="alert alert-warning" role="alert">
+      This station appears to be offline or temporarily unavailable. The stream details are still
+      provided for reference.
+    </div>
+  )}
+
+  <section class="mb-4">
+    <h2 class="h5">Listen live</h2>
+    {station.stream_url ? (
+      <div class="card">
+        <div class="card-body">
+          <audio controls preload="none" class="w-100" aria-label={`Listen to ${station.name}`}>
+            <source src={station.stream_url} type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+          <p class="small text-muted mt-2 mb-0">
+            If playback fails, open the direct stream link below or visit the station homepage.
+          </p>
+        </div>
+      </div>
+    ) : (
+      <p class="text-muted">Live stream is not available for this station.</p>
+    )}
+  </section>
+
+  <section class="mb-4">
+    <h2 class="h5">Station details</h2>
+    <ul class="list-group">
+      <li class="list-group-item d-flex justify-content-between">
+        <span>City</span>
+        <a href={`/city/${station.citySlug}/`}>{station.cityName}</a>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Genres</span>
+        <span>
+          {genres.length
+            ? genres.map((genre, index) => (
+                <span>
+                  <a href={`/genre/${genre.slug}/`}>{genre.name}</a>
+                  {index < genres.length - 1 ? ', ' : ''}
+                </span>
+              ))
+            : 'Not specified'}
+        </span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Votes</span>
+        <span>{station.votes ?? 0}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Bitrate</span>
+        <span>{bitrate}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Codec</span>
+        <span>{codec}</span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Stream type</span>
+        <span>
+          {station.hls === 1 ? <span class="badge text-bg-info">HLS</span> : 'Standard stream'}
+          {station.ssl_error === 1 && <span class="badge text-bg-warning ms-2">SSL Issue</span>}
+        </span>
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Stream URL</span>
+        {station.stream_url ? (
+          <a href={station.stream_url} rel="noopener" target="_blank">
+            Open stream
+          </a>
+        ) : (
+          <span>Not available</span>
+        )}
+      </li>
+      <li class="list-group-item d-flex justify-content-between">
+        <span>Homepage</span>
+        {station.homepage ? (
+          <a href={station.homepage} rel="noopener" target="_blank">
+            Visit website
+          </a>
+        ) : (
+          <span>Not available</span>
+        )}
+      </li>
+    </ul>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h5">About {station.name}</h2>
+    <p>{descriptionText}</p>
+  </section>
+
+  {related.length > 0 && (
+    <section>
+      <h2 class="h5 mb-3">Related stations</h2>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        {related.map((item) => (
+          <StationCard station={item} />
+        ))}
+      </div>
+    </section>
+  )}
+</Layout>

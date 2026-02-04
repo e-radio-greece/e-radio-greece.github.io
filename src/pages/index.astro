@@ -1,0 +1,94 @@
+---
+import Layout from '../layouts/Layout.astro';
+import StationCard from '../components/StationCard.astro';
+import { cities, genres, topRatedStations } from '../lib/data';
+import { buildUrl, pageTitle, truncate } from '../lib/seo';
+
+const topRated = topRatedStations.slice(0, 20);
+const topCities = cities.slice(0, 20);
+const topGenres = genres.slice(0, 20);
+
+const title = pageTitle('Greek radio stations');
+const description = truncate(
+	'Discover Greek radio stations across every city and genre. Browse top-rated stations, explore city and genre collections, and listen with detailed stream information.'
+);
+const canonical = buildUrl('/');
+
+const jsonLd = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: 'E-Radio Greece',
+		url: canonical,
+		potentialAction: {
+			'@type': 'SearchAction',
+			target: `${canonical}?q={search_term_string}`,
+			'query-input': 'required name=search_term_string',
+		},
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'Organization',
+		name: 'E-Radio Greece',
+		url: canonical,
+	},
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+	<header class="mb-4">
+		<h1 class="display-6 fw-semibold">Greek radio stations</h1>
+		<p class="lead">
+			Browse 1,836 Greek radio stations with full crawlable listings. Explore top-rated picks,
+			search by city, or dive into the most popular genres.
+		</p>
+	</header>
+
+	<section class="mb-5">
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<h2 class="h4 mb-0">Top Rated</h2>
+			<a class="small" href="/top-rated/">View all</a>
+		</div>
+		<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+			{topRated.map((station) => (
+				<StationCard station={station} />
+			))}
+		</div>
+	</section>
+
+	<section class="mb-5">
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<h2 class="h4 mb-0">Cities</h2>
+			<a class="small" href="/city/">View all</a>
+		</div>
+		<div class="list-group">
+			{topCities.map((city) => (
+				<a
+					class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+					href={`/city/${city.citySlug}/`}
+				>
+					<span>{city.cityName}</span>
+					<span class="badge text-bg-secondary rounded-pill">{city.count}</span>
+				</a>
+			))}
+		</div>
+	</section>
+
+	<section>
+		<div class="d-flex justify-content-between align-items-center mb-3">
+			<h2 class="h4 mb-0">Genres</h2>
+			<a class="small" href="/genre/">View all</a>
+		</div>
+		<div class="list-group">
+			{topGenres.map((genre) => (
+				<a
+					class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+					href={`/genre/${genre.genreSlug}/`}
+				>
+					<span>{genre.genreName}</span>
+					<span class="badge text-bg-secondary rounded-pill">{genre.count}</span>
+				</a>
+			))}
+		</div>
+	</section>
+</Layout>

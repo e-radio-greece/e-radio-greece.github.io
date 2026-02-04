@@ -1,0 +1,94 @@
+---
+import Navbar from '../components/Navbar.astro';
+import { buildHreflangLinks } from '../lib/seo';
+
+type Props = {
+  title: string;
+  description: string;
+  canonical: string;
+  jsonLd?: Array<Record<string, unknown>>;
+  ogImage?: string;
+  prevUrl?: string | null;
+  nextUrl?: string | null;
+};
+
+const {
+  title,
+  description,
+  canonical,
+  jsonLd = [],
+  ogImage,
+  prevUrl,
+  nextUrl,
+} = Astro.props;
+
+const hreflangs = buildHreflangLinks(canonical);
+---
+
+<!doctype html>
+<html lang="el">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="robots" content="index, follow" />
+		<link rel="canonical" href={canonical} />
+		{prevUrl && <link rel="prev" href={prevUrl} />}
+		{nextUrl && <link rel="next" href={nextUrl} />}
+		{hreflangs.map((item) => (
+			<link rel="alternate" hreflang={item.hreflang} href={item.href} />
+		))}
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		{ogImage && <meta property="og:image" content={ogImage} />}
+		<meta name="twitter:card" content="summary" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		{ogImage && <meta name="twitter:image" content={ogImage} />}
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+			integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+			crossorigin="anonymous"
+		/>
+	</head>
+	<body class="bg-light text-body">
+		<Navbar />
+		<main class="container py-4">
+			<slot />
+		</main>
+		{jsonLd.length > 0 && (
+			<script type="application/ld+json">
+				{JSON.stringify(jsonLd)}
+			</script>
+		)}
+		<script
+			src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+			integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+			crossorigin="anonymous"
+			defer
+		></script>
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		color-scheme: light;
+	}
+
+	img {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.card a.stretched-link::after {
+		position: absolute;
+		inset: 0;
+		content: '';
+	}
+</style>

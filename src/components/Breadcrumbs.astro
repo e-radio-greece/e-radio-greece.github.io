@@ -1,0 +1,17 @@
+---
+const { items } = Astro.props as { items: Array<{ name: string; url: string }> };
+---
+
+<nav aria-label="Breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    {items.map((item, index) => (
+      <li class={`breadcrumb-item ${index === items.length - 1 ? 'active' : ''}`}>
+        {index === items.length - 1 ? (
+          <span aria-current="page">{item.name}</span>
+        ) : (
+          <a href={item.url}>{item.name}</a>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>

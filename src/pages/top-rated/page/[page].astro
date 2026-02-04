@@ -1,0 +1,55 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import StationCard from '../../../components/StationCard.astro';
+import Pagination from '../../../components/Pagination.astro';
+import { paginate, topRatedStations } from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () => {
+  const size = 50;
+  const totalPages = Math.max(1, Math.ceil(topRatedStations.length / size));
+  return Array.from({ length: totalPages }, (_, index) => ({
+    params: { page: String(index + 1) },
+  })).slice(1);
+};
+
+const pageNumber = Number(Astro.params.page || '1');
+const { items, totalPages, currentPage } = paginate(topRatedStations, pageNumber, pageSize);
+
+const title = pageTitle(`Top rated Greek radio stations - Page ${currentPage}`);
+const description = truncate(
+  `Page ${currentPage} of the top rated Greek radio stations. Compare vote counts and discover highly rated stations with reliable streams.`
+);
+const canonical = buildUrl(`/top-rated/page/${currentPage}/`);
+const prevUrl = currentPage > 1 ? buildUrl(currentPage === 2 ? '/top-rated/' : `/top-rated/page/${currentPage - 1}/`) : null;
+const nextUrl = currentPage < totalPages ? buildUrl(`/top-rated/page/${currentPage + 1}/`) : null;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Top rated Greek radio stations - Page ${currentPage}`,
+    url: canonical,
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} prevUrl={prevUrl} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <header class="mb-4">
+    <h1 class="h2">Top rated Greek radio stations</h1>
+    <p class="lead">
+      Page {currentPage} highlights another batch of highly rated stations. This section helps
+      search engines and listeners crawl deeper into the rankings with unique context per page.
+    </p>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl="/top-rated/" currentPage={currentPage} totalPages={totalPages} />
+</Layout>
