@@ -10,7 +10,7 @@ const pageSize = 50;
 
 export const getStaticPaths = () => {
   const paths = [] as Array<{ params: { tier: string; page: string } }>;
-  const tierKeys = ['low', 'standard', 'high', 'hd'];
+  const tierKeys = qualityTierKeys;
   const size = 50;
   for (const tier of tierKeys) {
     const stations = getStationsByQuality(tier)
