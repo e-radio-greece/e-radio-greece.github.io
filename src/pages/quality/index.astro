@@ -1,0 +1,71 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getQualityCounts } from '../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../lib/seo';
+
+const tiers = getQualityCounts();
+
+const title = pageTitle('Streaming quality hubs');
+const description = truncate(
+  'Browse Greek radio stations by streaming quality. Explore low, standard, high, and HD bitrate hubs with crawlable listings.'
+);
+const canonical = buildUrl('/quality/');
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Quality', url: '/quality/' },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Streaming quality hubs',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: tiers.map((tier, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: tier.label,
+      url: buildUrl(`/quality/${tier.tier}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Streaming quality hubs</h1>
+    <p class="lead">
+      Choose a streaming quality tier to explore Greek radio stations by bitrate. These hubs are
+      HTML-only and optimized for stable indexing and discovery.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {tiers.map((tier) => (
+      <a class="list-group-item list-group-item-action" href={`/quality/${tier.tier}/`}>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">{tier.label}</span>
+          <span class="badge text-bg-secondary rounded-pill">{tier.count}</span>
+        </div>
+      </a>
+    ))}
+  </div>
+</Layout>

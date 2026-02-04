@@ -1,0 +1,100 @@
+---
+import Layout from '../../../../../layouts/Layout.astro';
+import StationCard from '../../../../../components/StationCard.astro';
+import Breadcrumbs from '../../../../../components/Breadcrumbs.astro';
+import {
+  getCityGenreCombos,
+  getCityGenreStations,
+  getCityStat,
+  getGenreStat,
+} from '../../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../../lib/seo';
+
+export const getStaticPaths = () =>
+  getCityGenreCombos(20, 5).map((combo) => ({
+    params: { citySlug: combo.citySlug, genreSlug: combo.genreSlug },
+  }));
+
+const { citySlug, genreSlug } = Astro.params;
+const cityStat = getCityStat(citySlug!);
+const genreStat = getGenreStat(genreSlug!);
+
+if (!cityStat || !genreStat) {
+  throw new Error(`Intersection not found: ${citySlug}/${genreSlug}`);
+}
+
+const stations = getCityGenreStations(citySlug!, genreSlug!)
+  .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+  .slice(0, 50);
+
+const topStationsCopy = stations.slice(0, 5).map((station) => station.name).join(', ');
+const intersectionCount = stations.length;
+
+const longCopy = `${genreStat.genreName} radio in ${cityStat.cityName} combines local voices with the most trusted stations in Greece. ` +
+  `This focused hub highlights ${intersectionCount} verified stations where ${genreStat.genreName} is actively broadcast in ${cityStat.cityName}, giving listeners a reliable shortcut to live streams without relying on client-side scripts. ` +
+  `Stations in this city span ${cityStat.count} total listings, while the ${genreStat.genreName} genre appears across ${genreStat.count} stations nationally, so this intersection page helps search engines understand the overlap and reinforce internal relevance. ` +
+  `Top stations in this category include ${topStationsCopy || 'leading local stations'}, and each listing links to a dedicated station profile with stream URL, codec, votes, and homepage details. ` +
+  `Use this directory to compare stream quality, open the live player, and move between related city and genre hubs for broader exploration. ` +
+  `Listings are sorted by votes to surface the most trusted options first, while remaining entries keep the long-tail discoverable for deeper crawling. ` +
+  `All content remains HTML-first and indexable, helping the directory stay visible across search results for niche Greek radio queries.`;
+
+const title = pageTitle(`${genreStat.genreName} radio stations in ${cityStat.cityName}`);
+const description = truncate(
+  `Discover ${intersectionCount} ${genreStat.genreName} radio stations in ${cityStat.cityName}. Explore verified streams, votes, and station details.`
+);
+const canonical = buildUrl(`/city/${cityStat.citySlug}/genre/${genreStat.genreSlug}/`);
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: cityStat.cityName, url: `/city/${cityStat.citySlug}/` },
+  { name: `${genreStat.genreName} in ${cityStat.cityName}`, url: `/city/${cityStat.citySlug}/genre/${genreStat.genreSlug}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${genreStat.genreName} radio stations in ${cityStat.cityName}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: stations.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">{genreStat.genreName} radio stations in {cityStat.cityName}</h1>
+    <p class="lead">{longCopy}</p>
+  </header>
+
+  {stations.length ? (
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+      {stations.map((station) => (
+        <StationCard station={station} />
+      ))}
+    </div>
+  ) : (
+    <p class="text-muted">No active stations found for this city and genre combination.</p>
+  )}
+</Layout>

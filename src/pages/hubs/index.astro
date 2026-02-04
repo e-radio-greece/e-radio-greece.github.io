@@ -1,0 +1,102 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { buildUrl, pageTitle, truncate } from '../../lib/seo';
+
+const title = pageTitle('Internal link hubs');
+const description = truncate(
+  'Explore internal link hubs for cities, genres, top-rated stations, and streaming quality. These hub pages improve crawlability and help users discover Greek radio stations.'
+);
+const canonical = buildUrl('/hubs/');
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Hubs', url: '/hubs/' },
+];
+
+const hubLinks = [
+  {
+    name: 'Cities hub',
+    description: 'Browse every city and jump to letter-based hubs.',
+    url: '/city/',
+  },
+  {
+    name: 'Genres hub',
+    description: 'Browse every genre and jump to letter-based hubs.',
+    url: '/genre/',
+  },
+  {
+    name: 'Top cities hub',
+    description: 'Discover the 100 cities with the most stations.',
+    url: '/hubs/top-cities/',
+  },
+  {
+    name: 'Top genres hub',
+    description: 'Explore the 100 genres with the most stations.',
+    url: '/hubs/top-genres/',
+  },
+  {
+    name: 'Streaming quality hub',
+    description: 'Find stations by bitrate quality tiers.',
+    url: '/quality/',
+  },
+  {
+    name: 'City-genre hub',
+    description: 'Top city and genre combinations for deeper discovery.',
+    url: '/hubs/city-genre/',
+  },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Internal link hubs',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: hubLinks.map((hub, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: hub.name,
+      url: buildUrl(hub.url),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Internal link hubs</h1>
+    <p class="lead">
+      Use these curated hub pages to explore Greek radio stations by city, genre, popularity, and
+      streaming quality. Every hub is HTML-only and designed for stable crawling and discovery.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {hubLinks.map((hub) => (
+      <a class="list-group-item list-group-item-action" href={hub.url}>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">{hub.name}</span>
+          <span class="small text-muted">Explore</span>
+        </div>
+        <p class="mb-0 small text-muted">{hub.description}</p>
+      </a>
+    ))}
+  </div>
+</Layout>

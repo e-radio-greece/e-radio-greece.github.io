@@ -1,0 +1,88 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getCityGenreCombos } from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const combos = getCityGenreCombos(20, 5);
+
+const title = pageTitle('City and genre hubs');
+const description = truncate(
+  'Explore top city and genre combinations to discover Greek radio stations with focused internal links and crawlable listing pages.'
+);
+const canonical = buildUrl('/hubs/city-genre/');
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Hubs', url: '/hubs/' },
+  { name: 'City-genre', url: '/hubs/city-genre/' },
+];
+
+const grouped = combos.reduce<Record<string, typeof combos>>((acc, combo) => {
+  if (!acc[combo.citySlug]) acc[combo.citySlug] = [];
+  acc[combo.citySlug].push(combo);
+  return acc;
+}, {});
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'City and genre hubs',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: combos.map((combo, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: `${combo.genreName} in ${combo.cityName}`,
+      url: buildUrl(`/city/${combo.citySlug}/genre/${combo.genreSlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">City and genre hubs</h1>
+    <p class="lead">
+      These curated city-genre intersections highlight the strongest combinations in Greece. Use
+      them to discover deeper station pages with crawlable, HTML-only listings.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {Object.entries(grouped).map(([citySlug, items]) => (
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <a class="fw-semibold text-decoration-none" href={`/city/${citySlug}/`}>
+            {items[0]?.cityName}
+          </a>
+          <span class="badge text-bg-secondary rounded-pill">{items.length}</span>
+        </div>
+        <p class="mb-0 mt-2 small text-muted">
+          {items.map((combo, index) => (
+            <span>
+              <a href={`/city/${combo.citySlug}/genre/${combo.genreSlug}/`}>{combo.genreName}</a>
+              {index < items.length - 1 ? ', ' : ''}
+            </span>
+          ))}
+        </p>
+      </div>
+    ))}
+  </div>
+</Layout>

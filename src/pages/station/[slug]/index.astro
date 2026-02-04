@@ -2,7 +2,14 @@
 import Layout from '../../../layouts/Layout.astro';
 import StationCard from '../../../components/StationCard.astro';
 import Breadcrumbs from '../../../components/Breadcrumbs.astro';
-import { getRelatedStations, getStationBySlug } from '../../../lib/data';
+import {
+  getLetterBucket,
+  getLetterLabel,
+  getQualityLabel,
+  getQualityTier,
+  getRelatedStations,
+  getStationBySlug,
+} from '../../../lib/data';
 import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
 import { titleFromSlug } from '../../../lib/slugify';
 
@@ -24,6 +31,14 @@ const genres = station.normalizedGenres.map((genre) => ({
 }));
 const bitrate = station.bitrate ? `${station.bitrate} kbps` : 'Unknown bitrate';
 const codec = station.codec || 'Unknown codec';
+
+const cityLetterBucket = getLetterBucket(station.citySlug);
+const cityLetterLabel = getLetterLabel(cityLetterBucket);
+const qualityTier = getQualityTier(station.bitrate ?? null);
+const qualityLabel = qualityTier ? getQualityLabel(qualityTier) : null;
+const primaryGenre = genres[0];
+const primaryGenreLetterBucket = primaryGenre ? getLetterBucket(primaryGenre.slug) : null;
+const primaryGenreLetterLabel = primaryGenreLetterBucket ? getLetterLabel(primaryGenreLetterBucket) : null;
 
 const descriptionText = `${station.name} is a Greek radio station serving ${station.cityName} and nearby listeners. ` +
   `Listeners tune in for ${genres.map((genre) => genre.name).join(', ') || 'varied programming'} with ${bitrate} streaming quality delivered in ${codec} format. ` +
@@ -88,7 +103,7 @@ const jsonLd = [
           class="rounded"
         />
       ) : (
-        <div class="bg-secondary-subtle rounded" style="width:48px;height:48px;"></div>
+        <div class="bg-secondary-subtle rounded station-favicon-placeholder"></div>
       )}
       <div>
         <h1 class="h2 mb-1">Listen {station.name} online</h1>
@@ -104,8 +119,25 @@ const jsonLd = [
     </div>
   )}
 
-  <section class="mb-4">
-    <h2 class="h5">Listen live</h2>
+  <section class="mb-4" aria-labelledby="listen-live-title">
+    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+      <h2 id="listen-live-title" class="h5 mb-0">Listen live</h2>
+      <a
+        href="https://apple.co/4lNPQAH"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Listen on Radddio"
+        class="d-inline-block"
+      >
+        <img
+          src="/radddio-badge.svg"
+          alt="Listen on Radddio"
+          height="40"
+          class="radddio-badge"
+          decoding="async"
+        />
+      </a>
+    </div>
     {station.stream_url ? (
       <div class="card">
         <div class="card-body">
@@ -188,6 +220,31 @@ const jsonLd = [
   <section class="mb-5">
     <h2 class="h5">About {station.name}</h2>
     <p>{descriptionText}</p>
+  </section>
+
+  <section class="mb-5">
+    <h2 class="h5">Explore related hubs</h2>
+    <div class="list-group">
+      <a class="list-group-item list-group-item-action" href={`/city/${station.citySlug}/`}>
+        {station.cityName} city page
+      </a>
+      <a class="list-group-item list-group-item-action" href={`/city/letter/${cityLetterBucket}/`}>
+        Cities starting with {cityLetterLabel}
+      </a>
+      <a class="list-group-item list-group-item-action" href="/hubs/top-cities/">
+        Top cities hub
+      </a>
+      {qualityTier && (
+        <a class="list-group-item list-group-item-action" href={`/quality/${qualityTier}/`}>
+          {qualityLabel}
+        </a>
+      )}
+      {primaryGenre && primaryGenreLetterBucket && (
+        <a class="list-group-item list-group-item-action" href={`/genre/letter/${primaryGenreLetterBucket}/`}>
+          Genres starting with {primaryGenreLetterLabel}
+        </a>
+      )}
+    </div>
   </section>
 
   {related.length > 0 && (

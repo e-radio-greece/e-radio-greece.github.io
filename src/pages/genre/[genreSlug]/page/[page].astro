@@ -8,6 +8,9 @@ import {
   genres,
   getGenreStat,
   getGenreStations,
+  getLetterBucket,
+  getLetterLabel,
+  getNearbyGenres,
   paginate,
 } from '../../../../lib/data';
 import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
@@ -31,6 +34,10 @@ if (!stat) throw new Error(`Genre not found: ${genreSlug}`);
 const stations = getGenreStations(genreSlug!);
 const pageNumber = Number(page || '1');
 const { items, totalPages, currentPage } = paginate(stations, pageNumber, pageSize);
+
+const letterBucket = getLetterBucket(stat.genreSlug);
+const letterLabel = getLetterLabel(letterBucket);
+const nearbyGenres = getNearbyGenres(stat.genreSlug, 5);
 
 const topCities = stat.topCities.map((city) => city.name).join(', ') || 'many cities across Greece';
 const bitrateSummary = formatBitrateSummary(stat.bitrateDistribution);
@@ -110,6 +117,23 @@ const jsonLd = [
       <StationCard station={station} />
     ))}
   </div>
+
+  <section class="mt-5">
+    <h2 class="h5">Browse more genres</h2>
+    <p class="text-muted">
+      Explore the {letterLabel} letter hub or jump to nearby genres in alphabetical order.
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href={`/genre/letter/${letterBucket}/`}>
+        Genres starting with {letterLabel}
+      </a>
+      {nearbyGenres.map((genre) => (
+        <a class="btn btn-outline-secondary btn-sm" href={`/genre/${genre.genreSlug}/`}>
+          {genre.genreName}
+        </a>
+      ))}
+    </div>
+  </section>
 
   <Pagination baseUrl={`/genre/${stat.genreSlug}/`} currentPage={currentPage} totalPages={totalPages} />
 </Layout>

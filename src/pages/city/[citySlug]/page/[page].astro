@@ -8,6 +8,9 @@ import {
   formatBitrateSummary,
   getCityStat,
   getCityStations,
+  getLetterBucket,
+  getLetterLabel,
+  getNearbyCities,
   paginate,
 } from '../../../../lib/data';
 import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
@@ -31,6 +34,10 @@ if (!stat) throw new Error(`City not found: ${citySlug}`);
 const stations = getCityStations(citySlug!);
 const pageNumber = Number(page || '1');
 const { items, totalPages, currentPage } = paginate(stations, pageNumber, pageSize);
+
+const letterBucket = getLetterBucket(stat.citySlug);
+const letterLabel = getLetterLabel(letterBucket);
+const nearbyCities = getNearbyCities(stat.citySlug, 5);
 
 const topGenres = stat.topGenres.map((genre) => genre.name).join(', ') || 'varied genres';
 const bitrateSummary = formatBitrateSummary(stat.bitrateDistribution);
@@ -110,6 +117,23 @@ const jsonLd = [
       <StationCard station={station} />
     ))}
   </div>
+
+  <section class="mt-5">
+    <h2 class="h5">Browse more cities</h2>
+    <p class="text-muted">
+      Explore the {letterLabel} letter hub or jump to nearby cities in alphabetical order.
+    </p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href={`/city/letter/${letterBucket}/`}>
+        Cities starting with {letterLabel}
+      </a>
+      {nearbyCities.map((city) => (
+        <a class="btn btn-outline-secondary btn-sm" href={`/city/${city.citySlug}/`}>
+          {city.cityName}
+        </a>
+      ))}
+    </div>
+  </section>
 
   <Pagination baseUrl={`/city/${stat.citySlug}/`} currentPage={currentPage} totalPages={totalPages} />
 </Layout>

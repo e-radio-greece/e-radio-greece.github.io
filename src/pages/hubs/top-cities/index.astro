@@ -1,0 +1,92 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import {
+  getTopCities,
+  getTopStationsForCity,
+} from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const topCities = getTopCities(100);
+
+const title = pageTitle('Top cities for Greek radio stations');
+const description = truncate(
+  'Explore the top 100 Greek cities by station count and jump directly to the highest-voted stations in each city.'
+);
+const canonical = buildUrl('/hubs/top-cities/');
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Hubs', url: '/hubs/' },
+  { name: 'Top cities', url: '/hubs/top-cities/' },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Top cities for Greek radio stations',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: topCities.map((city, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: city.cityName,
+      url: buildUrl(`/city/${city.citySlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Top cities for Greek radio stations</h1>
+    <p class="lead">
+      These 100 cities host the largest number of verified Greek radio stations. Use the inline
+      station links to jump directly to high-demand station profiles and strengthen internal
+      discovery paths.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {topCities.map((city) => {
+      const topStations = getTopStationsForCity(city.citySlug, 3);
+      return (
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center">
+            <a class="fw-semibold text-decoration-none" href={`/city/${city.citySlug}/`}>
+              {city.cityName}
+            </a>
+            <span class="badge text-bg-secondary rounded-pill">{city.count}</span>
+          </div>
+          {topStations.length > 0 && (
+            <p class="mb-0 mt-2 small text-muted">
+              Top stations:{' '}
+              {topStations.map((station, index) => (
+                <span>
+                  <a href={`/station/${station.slug}/`}>{station.name}</a>
+                  {index < topStations.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      );
+    })}
+  </div>
+</Layout>

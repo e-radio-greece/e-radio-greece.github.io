@@ -16,7 +16,5 @@ export const truncate = (value: string, max = 160) =>
   value.length > max ? `${value.slice(0, max - 1).trim()}…` : value;
 
 export const buildHreflangLinks = (canonical: string) => [
-  { hreflang: 'el', href: canonical },
   { hreflang: 'en', href: canonical },
-  { hreflang: 'x-default', href: canonical },
 ];

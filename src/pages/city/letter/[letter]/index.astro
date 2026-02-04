@@ -1,0 +1,107 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import {
+  getCitiesByLetter,
+  getLetterLabel,
+  letterHubBuckets,
+} from '../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
+
+export const getStaticPaths = () =>
+  letterHubBuckets.map((letter) => ({
+    params: { letter },
+  }));
+
+const { letter } = Astro.params;
+const bucket = (letter || 'other') as typeof letterHubBuckets[number];
+const displayLetter = getLetterLabel(bucket);
+
+const cities = getCitiesByLetter(bucket);
+const title = pageTitle(`Cities in Greece starting with ${displayLetter}`);
+const description = truncate(
+  `Browse Greek radio cities starting with ${displayLetter}. Discover station counts and link directly to each city page for full station listings.`
+);
+const canonical = buildUrl(`/city/letter/${bucket}/`);
+
+const bucketIndex = letterHubBuckets.findIndex((item) => item === bucket);
+const prevBucket = bucketIndex > 0 ? letterHubBuckets[bucketIndex - 1] : null;
+const nextBucket = bucketIndex < letterHubBuckets.length - 1 ? letterHubBuckets[bucketIndex + 1] : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Cities', url: '/city/' },
+  { name: `Letter ${displayLetter}`, url: `/city/letter/${bucket}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Cities in Greece starting with ${displayLetter}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: cities.map((city, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: city.cityName,
+      url: buildUrl(`/city/${city.citySlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Cities in Greece starting with {displayLetter}</h1>
+    <p class="lead">
+      Use this letter hub to discover every Greek city starting with {displayLetter}. Each entry
+      links to a full city listing with verified station information and stream details.
+    </p>
+  </header>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a class="btn btn-outline-secondary btn-sm" href="/city/">Back to all cities</a>
+    {prevBucket && (
+      <a class="btn btn-outline-primary btn-sm" href={`/city/letter/${prevBucket}/`}>
+        Previous letter
+      </a>
+    )}
+    {nextBucket && (
+      <a class="btn btn-outline-primary btn-sm" href={`/city/letter/${nextBucket}/`}>
+        Next letter
+      </a>
+    )}
+  </div>
+
+  {cities.length ? (
+    <div class="list-group">
+      {cities.map((city) => (
+        <a
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          href={`/city/${city.citySlug}/`}
+        >
+          <span>{city.cityName}</span>
+          <span class="badge text-bg-secondary rounded-pill">{city.count}</span>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <p class="text-muted">No cities found for this letter.</p>
+  )}
+</Layout>

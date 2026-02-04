@@ -1,0 +1,106 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import StationCard from '../../../../components/StationCard.astro';
+import Pagination from '../../../../components/Pagination.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import { getQualityLabel, getStationsByQuality, paginate, qualityTierKeys } from '../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () => {
+  const paths = [] as Array<{ params: { tier: string; page: string } }>;
+  const tierKeys = ['low', 'standard', 'high', 'hd'];
+  const size = 50;
+  for (const tier of tierKeys) {
+    const stations = getStationsByQuality(tier)
+      .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+      .slice(0, 100);
+    const totalPages = Math.max(1, Math.ceil(stations.length / size));
+    for (let page = 2; page <= totalPages; page += 1) {
+      paths.push({
+        params: { tier, page: String(page) },
+      });
+    }
+  }
+  return paths;
+};
+
+const { tier, page } = Astro.params;
+const tierKey = (tier || 'low') as (typeof qualityTierKeys)[number];
+const pageNumber = Number(page || '1');
+
+const stations = getStationsByQuality(tierKey)
+  .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+  .slice(0, 100);
+
+const { items, totalPages, currentPage } = paginate(stations, pageNumber, pageSize);
+
+const label = getQualityLabel(tierKey);
+const title = pageTitle(`${label} Greek radio stations - Page ${currentPage}`);
+const description = truncate(
+  `Page ${currentPage} of ${label} Greek radio stations. Discover more high-quality streams ordered by listener votes.`
+);
+const canonical = buildUrl(`/quality/${tierKey}/page/${currentPage}/`);
+const prevUrl =
+  currentPage > 1
+    ? buildUrl(currentPage === 2 ? `/quality/${tierKey}/` : `/quality/${tierKey}/page/${currentPage - 1}/`)
+    : null;
+const nextUrl = currentPage < totalPages ? buildUrl(`/quality/${tierKey}/page/${currentPage + 1}/`) : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Quality', url: '/quality/' },
+  { name: label, url: `/quality/${tierKey}/` },
+  { name: `Page ${currentPage}`, url: `/quality/${tierKey}/page/${currentPage}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} Greek radio stations - Page ${currentPage}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} prevUrl={prevUrl} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">{label} Greek radio stations</h1>
+    <p class="lead">
+      Page {currentPage} continues the {label} bitrate listings, helping users and search engines
+      crawl deeper into the most reliable streams.
+    </p>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl={`/quality/${tierKey}/`} currentPage={currentPage} totalPages={totalPages} />
+</Layout>

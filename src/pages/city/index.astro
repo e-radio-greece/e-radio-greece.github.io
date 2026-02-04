@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { cities } from '../../lib/data';
+import { cities, getLetterLabel, letterHubBuckets } from '../../lib/data';
 import { buildUrl, pageTitle, truncate } from '../../lib/seo';
 
 const title = pageTitle('Greek radio stations by city');
@@ -35,6 +35,17 @@ const jsonLd = [
       top genres, and a detailed listing.
     </p>
   </header>
+
+  <section class="mb-4">
+    <h2 class="h5">Browse cities by letter</h2>
+    <div class="d-flex flex-wrap gap-2">
+      {letterHubBuckets.map((bucket) => (
+        <a class="btn btn-outline-secondary btn-sm" href={`/city/letter/${bucket}/`}>
+          {getLetterLabel(bucket)}
+        </a>
+      ))}
+    </div>
+  </section>
 
   <div class="list-group">
     {cities.map((city) => (

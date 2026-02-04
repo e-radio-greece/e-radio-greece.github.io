@@ -1,0 +1,92 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import {
+  getTopGenres,
+  getTopStationsForGenre,
+} from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const topGenres = getTopGenres(100);
+
+const title = pageTitle('Top genres for Greek radio stations');
+const description = truncate(
+  'Explore the top 100 Greek radio genres by station count and jump directly to the highest-voted stations in each genre.'
+);
+const canonical = buildUrl('/hubs/top-genres/');
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Hubs', url: '/hubs/' },
+  { name: 'Top genres', url: '/hubs/top-genres/' },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Top genres for Greek radio stations',
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: topGenres.map((genre, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: genre.genreName,
+      url: buildUrl(`/genre/${genre.genreSlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Top genres for Greek radio stations</h1>
+    <p class="lead">
+      These 100 genres host the largest number of verified Greek radio stations. Use the inline
+      station links to jump directly to high-demand station profiles and strengthen internal
+      discovery paths.
+    </p>
+  </header>
+
+  <div class="list-group">
+    {topGenres.map((genre) => {
+      const topStations = getTopStationsForGenre(genre.genreSlug, 3);
+      return (
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between align-items-center">
+            <a class="fw-semibold text-decoration-none" href={`/genre/${genre.genreSlug}/`}>
+              {genre.genreName}
+            </a>
+            <span class="badge text-bg-secondary rounded-pill">{genre.count}</span>
+          </div>
+          {topStations.length > 0 && (
+            <p class="mb-0 mt-2 small text-muted">
+              Top stations:{' '}
+              {topStations.map((station, index) => (
+                <span>
+                  <a href={`/station/${station.slug}/`}>{station.name}</a>
+                  {index < topStations.length - 1 ? ', ' : ''}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      );
+    })}
+  </div>
+</Layout>

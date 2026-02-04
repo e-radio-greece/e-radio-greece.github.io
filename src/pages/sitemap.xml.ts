@@ -2,13 +2,14 @@ import type { APIRoute } from 'astro';
 import { buildUrl } from '../lib/seo';
 
 export const GET: APIRoute = () => {
-  const lastmod = new Date().toISOString();
+  const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const sitemaps = [
     buildUrl('/sitemap-pages.xml'),
     buildUrl('/sitemap-stations.xml'),
     buildUrl('/sitemap-cities.xml'),
     buildUrl('/sitemap-genres.xml'),
     buildUrl('/sitemap-top-rated.xml'),
+    buildUrl('/sitemap-hubs.xml'),
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

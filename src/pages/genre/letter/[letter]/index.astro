@@ -1,0 +1,107 @@
+---
+import Layout from '../../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../../components/Breadcrumbs.astro';
+import {
+  getGenresByLetter,
+  getLetterLabel,
+  letterHubBuckets,
+} from '../../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../../lib/seo';
+
+export const getStaticPaths = () =>
+  letterHubBuckets.map((letter) => ({
+    params: { letter },
+  }));
+
+const { letter } = Astro.params;
+const bucket = (letter || 'other') as typeof letterHubBuckets[number];
+const displayLetter = getLetterLabel(bucket);
+
+const genres = getGenresByLetter(bucket);
+const title = pageTitle(`Genres in Greece starting with ${displayLetter}`);
+const description = truncate(
+  `Browse Greek radio genres starting with ${displayLetter}. Discover station counts and link directly to each genre listing.`
+);
+const canonical = buildUrl(`/genre/letter/${bucket}/`);
+
+const bucketIndex = letterHubBuckets.findIndex((item) => item === bucket);
+const prevBucket = bucketIndex > 0 ? letterHubBuckets[bucketIndex - 1] : null;
+const nextBucket = bucketIndex < letterHubBuckets.length - 1 ? letterHubBuckets[bucketIndex + 1] : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Genres', url: '/genre/' },
+  { name: `Letter ${displayLetter}`, url: `/genre/letter/${bucket}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Genres in Greece starting with ${displayLetter}`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: genres.map((genre, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: genre.genreName,
+      url: buildUrl(`/genre/${genre.genreSlug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">Genres in Greece starting with {displayLetter}</h1>
+    <p class="lead">
+      Use this letter hub to discover every Greek radio genre starting with {displayLetter}. Each
+      entry links to a full genre listing with verified stations and stream details.
+    </p>
+  </header>
+
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a class="btn btn-outline-secondary btn-sm" href="/genre/">Back to all genres</a>
+    {prevBucket && (
+      <a class="btn btn-outline-primary btn-sm" href={`/genre/letter/${prevBucket}/`}>
+        Previous letter
+      </a>
+    )}
+    {nextBucket && (
+      <a class="btn btn-outline-primary btn-sm" href={`/genre/letter/${nextBucket}/`}>
+        Next letter
+      </a>
+    )}
+  </div>
+
+  {genres.length ? (
+    <div class="list-group">
+      {genres.map((genre) => (
+        <a
+          class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+          href={`/genre/${genre.genreSlug}/`}
+        >
+          <span>{genre.genreName}</span>
+          <span class="badge text-bg-secondary rounded-pill">{genre.count}</span>
+        </a>
+      ))}
+    </div>
+  ) : (
+    <p class="text-muted">No genres found for this letter.</p>
+  )}
+</Layout>

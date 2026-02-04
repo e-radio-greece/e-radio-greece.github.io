@@ -28,6 +28,18 @@ SEO-first Astro site for Greek radio stations, optimized for static rendering an
 - Sitemaps list all canonical URLs.
 - robots.txt points to the sitemap index.
 
+## Hub pages
+
+The site includes static internal link hubs to improve crawlability and discovery:
+
+- [/hubs/](https://e-radio-greece.github.io/hubs/) hub directory
+- City letter hubs: `/city/letter/{a-z}`, `/city/letter/0-9`, `/city/letter/other`
+- Genre letter hubs: `/genre/letter/{a-z}`, `/genre/letter/0-9`, `/genre/letter/other`
+- [/hubs/top-cities/](https://e-radio-greece.github.io/hubs/top-cities/) (top 100 cities)
+- [/hubs/top-genres/](https://e-radio-greece.github.io/hubs/top-genres/) (top 100 genres)
+- [/quality/](https://e-radio-greece.github.io/quality/) bitrate clusters (low, standard, high, hd)
+- [/hubs/city-genre/](https://e-radio-greece.github.io/hubs/city-genre/) top city/genre intersections
+
 ## Deployment
 
 GitHub Pages deployment uses the workflow in .github/workflows/deploy.yml.

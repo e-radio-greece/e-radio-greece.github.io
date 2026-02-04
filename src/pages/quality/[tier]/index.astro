@@ -1,0 +1,87 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import StationCard from '../../../components/StationCard.astro';
+import Pagination from '../../../components/Pagination.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getQualityLabel, getStationsByQuality, paginate, qualityTierKeys } from '../../../lib/data';
+import { buildUrl, pageTitle, truncate } from '../../../lib/seo';
+
+const pageSize = 50;
+
+export const getStaticPaths = () =>
+  qualityTierKeys.map((tier) => ({
+    params: { tier },
+  }));
+
+const { tier } = Astro.params;
+const tierKey = (tier || 'low') as (typeof qualityTierKeys)[number];
+
+const stations = getStationsByQuality(tierKey)
+  .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+  .slice(0, 100);
+
+const { items, totalPages, currentPage } = paginate(stations, 1, pageSize);
+
+const label = getQualityLabel(tierKey);
+const title = pageTitle(`${label} Greek radio stations`);
+const description = truncate(
+  `${label} Greek radio stations ranked by votes. Explore the top ${stations.length} stations in this bitrate tier with crawlable, HTML-only listings.`
+);
+const canonical = buildUrl(`/quality/${tierKey}/`);
+const nextUrl = totalPages > 1 ? buildUrl(`/quality/${tierKey}/page/2/`) : null;
+
+const breadcrumbs = [
+  { name: 'Home', url: '/' },
+  { name: 'Quality', url: '/quality/' },
+  { name: label, url: `/quality/${tierKey}/` },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: buildUrl(crumb.url),
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} Greek radio stations`,
+    url: canonical,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: items.map((station, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: station.name,
+      url: buildUrl(`/station/${station.slug}/`),
+    })),
+  },
+];
+---
+
+<Layout title={title} description={description} canonical={canonical} nextUrl={nextUrl} jsonLd={jsonLd}>
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="mb-4">
+    <h1 class="h2">{label} Greek radio stations</h1>
+    <p class="lead">
+      This hub groups stations by bitrate to improve discovery for listeners who care about
+      streaming quality. All listings are sorted by votes and capped to the top 100 stations.
+    </p>
+  </header>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {items.map((station) => (
+      <StationCard station={station} />
+    ))}
+  </div>
+
+  <Pagination baseUrl={`/quality/${tierKey}/`} currentPage={currentPage} totalPages={totalPages} />
+</Layout>
