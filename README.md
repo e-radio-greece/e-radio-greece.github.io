@@ -1,4 +1,5 @@
-# e-radio-greece.github.io
+# E-Radio Greece
+Check the website: https://e-radio-greece.github.io/
 
 SEO-first Astro site for Greek radio stations, optimized for static rendering and GitHub Pages.
 
