@@ -5,7 +5,7 @@ import { topRatedStations } from '../lib/data';
 const pageSize = 50;
 
 export const GET: APIRoute = () => {
-  const lastmod = new Date().toISOString();
+  const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const totalPages = Math.max(1, Math.ceil(topRatedStations.length / pageSize));
   const urls: string[] = [buildUrl('/top-rated/')];
 

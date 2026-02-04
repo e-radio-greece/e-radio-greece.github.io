@@ -5,7 +5,7 @@ import { genres, getGenreStations } from '../lib/data';
 const pageSize = 50;
 
 export const GET: APIRoute = () => {
-  const lastmod = new Date().toISOString();
+  const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const urls: string[] = [];
 
   for (const genre of genres) {

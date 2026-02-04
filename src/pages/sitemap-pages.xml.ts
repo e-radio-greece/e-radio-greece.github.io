@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { buildUrl } from '../lib/seo';
 
 export const GET: APIRoute = () => {
-  const lastmod = new Date().toISOString();
+  const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const pages = ['/', '/top-rated/', '/city/', '/genre/'];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

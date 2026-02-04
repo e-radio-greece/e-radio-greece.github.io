@@ -3,7 +3,7 @@ import { buildUrl } from '../lib/seo';
 import stations from '../data/stations.json';
 
 export const GET: APIRoute = () => {
-  const lastmod = new Date().toISOString();
+  const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${(stations as Array<{ slug: string }>).map((station) => (
