@@ -75,13 +75,25 @@ const jsonLd = [
     '@type': 'RadioStation',
     name: station.name,
     url: canonical,
-    areaServed: station.cityName,
-    inLanguage: station.language || 'el',
-    sameAs: station.homepage || undefined,
+    areaServed: [
+      {
+        '@type': 'Country',
+        name: 'Greece',
+      },
+      {
+        '@type': 'City',
+        name: station.cityName,
+      },
+    ],
+    inLanguage: 'en',
+    sameAs: station.homepage ? [station.homepage] : undefined,
     potentialAction: station.stream_url
       ? {
           '@type': 'ListenAction',
-          target: station.stream_url,
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: station.stream_url,
+          },
         }
       : undefined,
   },
